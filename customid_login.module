@@ -1,0 +1,84 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function customid_login_menu() {
+  $items = array();
+
+  $items['customid_login/form'] = array( // this creates a URL that will call this form
+    'title' => 'Custom ID Login', //page title
+    'description' => 'A form to submit and get uid from customid_login.',
+    'page callback' => 'drupal_get_form', // this is the function that will be called when the page is accessed.  for a form, use drupal_get_form
+    'page arguments' => array('customid_login_form'), // put the name of the form here
+    'access callback' => TRUE
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback for customid_login/form.
+ */
+function customid_login_form($form, &$form_state) {
+  $form['customid_login'] = array(
+    '#type' => 'textfield',
+    '#title' => t('customid_login'),
+    '#size' => 60,
+    '#maxlength' => 128,
+    '#required' => TRUE,
+  );
+  $form['submit_button'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+  return $form;
+}
+
+/**
+ * Validate customid_login_form().
+ */
+function customid_login_form_validate($form, &$form_state) {
+  $customid_login = $form_state['values']['customid_login'];
+  $query = new EntityFieldQuery();
+  $query
+    ->entityCondition('entity_type', 'user')
+    ->fieldCondition('field_customid_login', 'value', $customid_login, '=')
+    ->range(0,1);
+  $result = $query->execute();
+  if (empty($result)){
+    form_set_error('customid_login', 'invalid ID number');
+    return FALSE;
+  }
+}
+
+/**
+ * Submit customid_login_form().
+ */
+function customid_login_form_submit($form, &$form_state) {
+  $customid_login = $form_state['values']['customid_login'];
+  $query = new EntityFieldQuery();
+  $query
+    ->entityCondition('entity_type', 'user')
+    ->fieldCondition('field_customid_login', 'value', $customid_login, '=')
+    ->range(0,1);
+  $result = $query->execute();
+  if (!empty($result)) {
+    $data=$result['user'];
+    reset($data);
+    $first_element=current($data);
+    $uid = $first_element->uid;
+    //user_login_submit(array(),array('uid'=>uid));
+    //return $uid;
+    //if uid found load user, authenticate it and redirect to page
+    global $user; //global because is same var as the one drupal uses
+    $user = user_load($uid);//set used data for you and drupal
+    $login_array = array('name' => $user->name);
+    user_login_finalize($login_array);//key function, will record user sessions
+    drupal_set_message(t('User loged in!'));
+    drupal_goto('/');
+  }
+  else{
+    return '';
+  }
+}

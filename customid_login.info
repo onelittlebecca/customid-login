@@ -1,0 +1,5 @@
+name = Custom ID Login
+core = 7.x
+package = US Fish and Wildlife
+version = 7.x-1.0
+project path = sites/all/modules/custom
